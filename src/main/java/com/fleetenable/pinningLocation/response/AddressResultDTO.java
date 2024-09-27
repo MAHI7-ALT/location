@@ -4,6 +4,7 @@ import lombok.Data;
 
 @Data
 public class AddressResultDTO {
+    private int sequence;
     private String address;
     private GeoCode geoCode;
     private GeoCode geoCode2; // Assuming similar structure to GeoCode

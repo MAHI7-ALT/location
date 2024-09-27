@@ -157,6 +157,7 @@ public class AddressService {
         List<String> invaildStrings = new ArrayList<>();
         for(String requestString : addresses) {
             Address address = new Address();
+            address.setAddresString(requestString);
             String[] addressParts = requestString.split(",");
             if(addressParts.length == 5){
                 address.setAdd1(addressParts[0]);
@@ -164,6 +165,7 @@ public class AddressService {
                 address.setState(addressParts[2]);
                 address.setCountry(addressParts[3]);
                 address.setZip(addressParts[4]);
+                addressList.add(address);
             } else if ( addressParts.length == 6) {
                 address.setAdd1(addressParts[0]);
                 address.setAdd2(addressParts[1]);
@@ -171,15 +173,23 @@ public class AddressService {
                 address.setState(addressParts[3]);
                 address.setCountry(addressParts[4]);
                 address.setZip(addressParts[5]);
+                addressList.add(address);
             } else {
                 System.out.println("address parts are more then 6 parts {}" + requestString);
                 invaildStrings.add(requestString);
             }
-            addressList.add(address);
+
         }
         responseDTO = getGeoCoadingDetails(addressList);
 
-        System.out.println("invalid address:" + invaildStrings);
+        if (!invaildStrings.isEmpty()) {
+            System.out.println("Invalid Addresses/Parts:");
+            for (String invalid : invaildStrings) {
+                System.out.println(invalid);
+            }
+        } else {
+            System.out.println("All addresses are valid.");
+        }
 
     return responseDTO;
     }
@@ -187,8 +197,12 @@ public class AddressService {
     private AddressResponseDTO getGeoCoadingDetails(List<Address> addressList) {
         AddressResponseDTO addressResponseDTO = new AddressResponseDTO();
         List<AddressResultDTO> addressResultDTOS = new ArrayList<>();
+        int sequence = 1;
         for(Address address : addressList) {
             AddressResultDTO addressResultDTO = new AddressResultDTO();
+            addressResultDTO.setSequence(sequence);
+            sequence++;
+            addressResultDTO.setAddress(address.getAddresString());
             String addressString = getAddressString(address, false);
             JSONObject locationResponse = geocodingAPI(addressString);
             boolean isPartialMatch = locationResponse.optBoolean("partial_match", false);
@@ -301,8 +315,16 @@ public class AddressService {
         if(ObjectUtils.isNotEmpty(recordObject)) {
             JSONObject record = recordObject.getJSONObject(0);
 
-            // set country and lat longs
-            Float[] coordinates = new Float[]{record.getFloat("Longitude"), record.getFloat("Latitude")};
+            String longitudeStr = record.optString("Longitude", null); // Returns null if key is not found or value is not a string
+            String latitudeStr = record.optString("Latitude", null);   // Same for Latitude
+
+            Float longitude = (longitudeStr != null && !longitudeStr.trim().isEmpty()) ? Float.parseFloat(longitudeStr) : null;
+            Float latitude = (latitudeStr != null && !latitudeStr.trim().isEmpty()) ? Float.parseFloat(latitudeStr) : null;
+
+            Float[] coordinates = new Float[]{
+                    (longitude != null) ? longitude : 0.0f,  // Replace 0.0f with a preferred default value
+                    (latitude != null) ? latitude : 0.0f     // Replace 0.0f with a preferred default value
+            };
             melisa.setAddressString(addressString);
             melisa.setLatLag(coordinates);
             melisa.setPartialMatch(setPartialMatch(jsonObject));
@@ -319,46 +341,15 @@ public class AddressService {
     private GeoCode setDataInLocation(JSONObject locationResponse, boolean isPartialMatch) {
         GeoCode result = new GeoCode();
         JSONObject resultsJsonObj = locationResponse.optJSONArray("results").optJSONObject(0);
-        String country = getCountryFromJSON(resultsJsonObj);
+        if(resultsJsonObj == null || resultsJsonObj.isEmpty()){
+            return result;
+        }
         JSONObject geometryObj = resultsJsonObj.getJSONObject("geometry");
         JSONObject locationObj = geometryObj.getJSONObject("location");
         result.setLatLng(new Float[]{locationObj.getFloat("lng"), locationObj.getFloat("lat")});
         result.setPartialMatch(isPartialMatch);
         return result;
     }
-
-    private String getCountryFromJSON(JSONObject resultsJsonObj) {
-        JSONArray addressComponents = resultsJsonObj.optJSONArray("address_components");
-        String country = null;
-        for (int i = 0; i < addressComponents.length(); i++) {
-            JSONObject addressComponent = (JSONObject) addressComponents.get(i);
-            JSONArray addressTypes = addressComponent.optJSONArray("types");
-            for (int j = 0; j < addressTypes.length(); j++) {
-                if (addressTypes.getString(j).equals("country")) {
-                    country = addressComponent.optString("short_name");
-                }
-            }
-        }
-        return country;
-    }
-
-    /*private void addDataInLocation(Locations location, JSONObject jsonObject) {
-        JSONArray recordObject = jsonObject.getJSONArray("Records");
-        if(ObjectUtils.isNotEmpty(recordObject)) {
-            JSONObject record = recordObject.getJSONObject(0);
-
-            // set country and lat longs
-            Float[] coordinates = new Float[]{record.getFloat("Longitude"), record.getFloat("Latitude")};
-            location.getLAddress().setCoordinates(coordinates);
-            location.setLatLong(coordinates);
-            location.setLocationPartialMatch(setPartialMatch(jsonObject));
-            location.setInvalidAddress(false);
-            location.getLAddress().setCountry(record.getString("CountryISO3166_1_Alpha2"));
-            location.setAddressType(record.getString("DeliveryIndicator"));
-            setZipCodeData(location, record.getString("PostalCode"));
-        }
-    }
-    }*/
     public ResponseEntity<String> callMellisaApi(Address address) {
         Map<String, String> paramsMap = addMandatoryKeys(address);
         if(ObjectUtils.isEmpty(paramsMap))

@@ -1,13 +1,17 @@
 package com.fleetenable.pinningLocation;
 
+import com.fasterxml.jackson.core.exc.StreamReadException;
+import com.fasterxml.jackson.databind.DatabindException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fleetenable.pinningLocation.request.AddressRequest;
 import com.fleetenable.pinningLocation.response.AddressResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/address")
@@ -46,4 +50,27 @@ public class AddressController {
         // You can access the addresses here
         return addressService.processAddress(addressRequest);
     }
+
+
+    @PostMapping("/upload-addresses")
+    public AddressResponseDTO uploadAddresses(@RequestParam("file") MultipartFile file) {
+        try {
+            // Check if the file is empty
+            if (file.isEmpty()) {
+                System.out.println("file must not be null");
+            }
+
+            // Parse the JSON file using ObjectMapper
+            ObjectMapper objectMapper = new ObjectMapper();
+            AddressRequest addressData = objectMapper.readValue(file.getInputStream(), AddressRequest.class);
+
+            // Process the addresses
+            return addressService.processAddress(addressData);
+        } catch (IOException e) {
+            // Handle exception if parsing fails
+            e.printStackTrace();
+        }
+        return null;
+    }
+
 }

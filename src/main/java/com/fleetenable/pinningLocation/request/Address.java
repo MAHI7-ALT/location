@@ -5,6 +5,8 @@ import lombok.Data;
 @Data
 public class Address {
 
+    private String addresString;
+
     private String add1;
 
     private String add2;
