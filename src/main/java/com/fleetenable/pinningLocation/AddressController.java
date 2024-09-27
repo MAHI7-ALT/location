@@ -1,5 +1,7 @@
 package com.fleetenable.pinningLocation;
 
+import com.fleetenable.pinningLocation.request.AddressRequest;
+import com.fleetenable.pinningLocation.response.AddressResponseDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,5 +38,12 @@ public class AddressController {
     private boolean isLengthValid(String address) {
         String[] parts = address.split(",");
         return parts.length == 5 || parts.length == 6;
+    }
+
+
+    @PostMapping("/getLatLon")
+    public AddressResponseDTO handleAddresses(@RequestBody AddressRequest addressRequest) {
+        // You can access the addresses here
+        return addressService.processAddress(addressRequest);
     }
 }
