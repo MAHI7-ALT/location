@@ -123,12 +123,6 @@ public class AddressService {
         return address.replaceAll("\\s+", " ").trim();
     }
 
-    // Method to check address length validity
-    public boolean isLengthValid(String address) {
-        String[] parts = address.split(",");
-        return parts.length == 5 || parts.length == 6;
-    }
-
     private List<String> formatAddress(String address) {
         String[] parts = address.split(",");
         List<String> formatted = new ArrayList<>();

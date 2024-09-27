@@ -1,5 +1,8 @@
 package com.fleetenable.pinningLocation;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,24 +18,27 @@ public class AddressController {
     @Autowired
     private AddressService addressService;
 
-    // Constructor injection for RestTemplate
-    @Autowired
     private RestTemplate restTemplate;
 
     @PostMapping("/format")
-    public ResponseEntity<CombinedResponseDTO> formatAndVerifyAddress(@RequestBody String address) {
-        String cleanAddress = addressService.cleanAddress(address);
+    public ResponseEntity<List<CombinedResponseDTO>> formatAndVerifyAddresses(@RequestBody List<String> addresses) {
+        List<CombinedResponseDTO> responseList = new ArrayList<>();
 
-        // Make API calls
-        String geoMapUrl = "https://maps.googleapis.com/maps/api/geocode/json?key=xxxxxxxxxxxxxxxxxxxxxx&address=" + cleanAddress;
-        String melisaUrl = "https://address.data.net/V3/WEB/GlobalAddress/doGlobalAddress?id=RsJPpXGR-TqvzQ1aVY-&ctry=USA&format=JSON&a1=" + cleanAddress;
+        for (String address : addresses) {
+            String cleanAddress = addressService.cleanAddress(address);
 
-        String geoMapResponse = restTemplate.getForObject(geoMapUrl, String.class);
-        String melisaResponse = restTemplate.getForObject(melisaUrl, String.class);
+            // Make API calls
+            String geoMapUrl = "https://maps.googleapis.com/maps/api/geocode/json?key=xxxxxxxxxxxxxxxxxxxxxx&address=" + cleanAddress;
+            String melisaUrl = "https://address.data.net/V3/WEB/GlobalAddress/doGlobalAddress?id=RsJPpXGR-TqvzQ1aVY-&ctry=USA&format=JSON&a1=" + cleanAddress;
 
-        // Call the service to process address and responses
-        CombinedResponseDTO combinedResponseDTO = addressService.processAddress(cleanAddress, geoMapResponse, melisaResponse);
-        
-        return ResponseEntity.ok(combinedResponseDTO);
+            String geoMapResponse = restTemplate.getForObject(geoMapUrl, String.class);
+            String melisaResponse = restTemplate.getForObject(melisaUrl, String.class);
+
+            // Call the service to process address and responses
+            CombinedResponseDTO combinedResponseDTO = addressService.processAddress(cleanAddress, geoMapResponse, melisaResponse);
+            responseList.add(combinedResponseDTO);
+        }
+
+        return ResponseEntity.ok(responseList);
     }
 }
