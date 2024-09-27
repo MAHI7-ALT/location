@@ -19,7 +19,9 @@ public class ExcelController {
         String tempFilePath = System.getProperty("java.io.tmpdir") + "/" + file.getOriginalFilename();
         file.transferTo(new java.io.File(tempFilePath));
         List<String> addresses = excelService.extractAddressesFromExcel(tempFilePath);
-
+        if (!addresses.isEmpty() && "Address".equalsIgnoreCase(addresses.get(0))) {
+            addresses.removeFirst();
+        }
         return ResponseEntity.ok(addresses);
     }
 }

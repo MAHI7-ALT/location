@@ -60,12 +60,16 @@ public class CombinedResponseDTO {
             this.lng = lng;
         }
 
-        public boolean isPartialMatch() {
+        public boolean setPartialMatch() {
             return partialMatch;
         }
 
         public void setPartialMatch(boolean partialMatch) {
             this.partialMatch = partialMatch;
+        }
+
+        public boolean getPartialMatch() {
+          return partialMatch;
         }
     }
 
